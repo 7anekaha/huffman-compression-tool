@@ -1,5 +1,5 @@
 import sys
-from huffman import HuffmanCompression
+from huffman2 import HuffmanCompression
 
 if __name__ == '__main__':
     path = sys.argv[1]
@@ -9,7 +9,7 @@ if __name__ == '__main__':
     # encode
     encoded_text = huffman_compression.encode()
     # print(encoded_text)
-    huffman_compression = HuffmanCompression(path)
-    decoded_text = huffman_compression.decode(path + '.huffman')
+    # huffman_compression = HuffmanCompression(path)
+    # decoded_text = huffman_compression.decode(path + '.huffman')
     # print(decoded_text)
     print('done')
