@@ -24,8 +24,10 @@ class HuffmanCompression:
         #   - tree as string
         #   - padding
         #   - sequence of bits
+        # file = len tree(4bytes) \n tree \n padding (1byte) \n sequence of bits
         tree_serialized = root.serialize_tree()
         len_tree_serialized = len(tree_serialized).to_bytes(4, byteorder='big')
+        padding = padding.to_bytes(1, byteorder='big')
         print(len_tree_serialized)
         
         with open(path + '.huffman', mode='wb') as file:
@@ -33,7 +35,7 @@ class HuffmanCompression:
             file.write(b'\n')
             file.write(tree_serialized.encode())
             file.write(b'\n')
-            file.write(f'{padding}'.encode())
+            file.write(padding)
             file.write(b'\n')
             file.write(content)
         
@@ -107,57 +109,58 @@ class HuffmanCompression:
         if output_path is None:
             output_path = self.path + '.decoded'
         
-        with open(input_path, mode='r') as file, open(output_path, mode='w') as output_file:
-            # read header
-            idx = 0
-            root = []
-            while True:
-                block = file.read(64 * 1024)
-                if not block:
-                    break
-                root.append(block)
-                for i, ch in enumerate(block):
-                    if ch == '\n':
-                        if i > 0 and block[i-1] == '\n':
-                            idx = i-1
-                            break
-                        if i == 0 and root and root[-1] == '\n':
-                            idx = 1
-                            break
-                
-            root = ''.join(root)
-            # print(f'{root[:idx]=}')
-            root_node = Node.deserialize_tree(root[:idx])
+        with open(input_path, mode='rb') as file, open(output_path, mode='w') as output_file:
+            # read len tree
+            len_tree = int.from_bytes(file.read(4), byteorder='big')
             
-            code = self._generate_hoffman_table(root_node)
-            print(f'{code=}')
+            # read jump line
+            file.read(1)
             
-            node = root_node
+            # read tree
+            tree = file.read(len_tree).decode()
             
-            idx += 2
-            if root[idx:]:
-                for ch in root[idx:]:
-                    print(f'{ch=}')
-                    node = node.left if ch == '0' else node.right # type: ignore
-                    print(f'{node=}')
-                    if node.is_leaf: # type: ignore
+            # convert tree to node
+            root = Node.deserialize_tree(tree)
+            
+            # read jump line
+            file.read(1)
+            
+            # read padding
+            padding = int.from_bytes(file.read(1), byteorder='big')
+            
+            # read jump line
+            file.read(1)
+            
+            # read sequence of bits
+            content = file.read()
+            
+            # remove padding
+            content = content[:len(content) - padding]
+            
+            # decode
+            sequence = ''
+            node = root
+            for b in content:
+                sequence += f'{b:08b}'
+                while len(sequence) >= 8:
+                    ch = sequence[0]
+                    sequence = sequence[1:]
+                    node = node.left if ch == '0' else node.right
+                    if node.is_leaf:
                         output_file.write(node.ch)
-                        node = root_node
-                        print('done')
+                        node = root
             
-            # read sequence of bits - in 64kb blocks
-            while True:
-                block = file.read(64 * 1024)
-                if not block:
-                    break
-                for ch in block:
-                    node = node.left if ch == '0' else node.right # type: ignore
-                    if node.is_leaf: # type: ignore
-                        output_file.write(node.ch)
-                        node = root_node
+            while len(sequence) >= 8:
+                ch = sequence[0]
+                sequence = sequence[1:]
+                node = node.left if ch == '0' else node.right
+                if node.is_leaf:
+                    output_file.write(node.ch)
+                    node = root
+                            
+                    
+                    
                 
-
-
 
 
 
