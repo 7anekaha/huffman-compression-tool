@@ -28,10 +28,9 @@ class Node:
             if values[idx] == 'None':
                 idx += 1
                 return None
-            print(f'values[idx]={values[idx]}')
             ch, freq = values[idx].split(' ##')
             freq, is_leaf = freq.split('-')
-            print(f'{ch=}, {freq=}')
+
             node = Node(ch, int(freq), is_leaf = is_leaf == 'True')
             idx += 1
             node.left = preorder()
