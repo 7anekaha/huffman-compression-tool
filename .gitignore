@@ -1,0 +1,6 @@
+.venv
+.zed
+__pycache__/
+.pytest_cache/
+sample.txt
+**.egg-info/

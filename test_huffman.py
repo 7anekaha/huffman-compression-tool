@@ -1,7 +1,8 @@
 import tempfile
 import pytest
+from pathlib import Path
 
-from huffman2 import HuffmanCompression, HuffmanTree
+from huffman import HuffmanCompression, HuffmanTree
 from tree import Node
 
 
@@ -21,8 +22,9 @@ def tmp_root():
         file.write("hello")
 
         file.seek(0)
+        path = Path(file.name)
 
-        root: Node = HuffmanTree.construct(file.name)
+        root: Node = HuffmanTree.construct(path)
         yield root
 
 
@@ -48,10 +50,11 @@ class TestHuffmanTree:
 
 class TestHuffmanCompression:
     def test_encode(self, tmp_file):
-        path = tmp_file.name
-        HuffmanCompression.encode(path)
+        path = Path(tmp_file.name)
+        encoded_path = Path("encoded.bin")
+        HuffmanCompression.encode(path, encoded_path)
 
-        with open(path + ".huffman", mode="rb") as file:
+        with open(encoded_path, mode="rb") as file:
             content = file.read()
 
             assert (
@@ -60,12 +63,16 @@ class TestHuffmanCompression:
             )
 
     def test_decode(self, tmp_file):
-        path = tmp_file.name
-        HuffmanCompression.encode(path)
+        path = Path(tmp_file.name)
+        encoded_path = Path("encoded.bin")
 
-        HuffmanCompression.decode(path + ".huffman", path + ".huffman.decoded")
+        decoded_path = Path("decoded.txt")
 
-        with open(path + ".huffman.decoded", mode="r") as file:
+        HuffmanCompression.encode(path, encoded_path)
+
+        HuffmanCompression.decode(encoded_path, decoded_path)
+
+        with open(decoded_path, mode="r") as file:
             content = file.read()
             print(content)
 
